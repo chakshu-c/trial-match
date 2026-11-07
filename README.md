@@ -51,14 +51,21 @@ python run.py --llm 3                                      # optional Gemini pas
 
 ## The app (`app/index.html`)
 
-- **Patient mode**
-  - **Swipe:** a minimal card per trial. Tap it for details underneath.
-  - **Questions:** one at a time, re-scoring every trial live.
-  - **My picks:** your trials and their status, with details inline.
-- **Staff mode**
-  - **Prescreen:** pick a trial and swipe on candidates. Interested patients come first; criteria and evidence are tucked behind a toggle, with Confirm met / Not met buttons.
-  - **Dashboard:** matches, candidate pools, and the prescreen log. The log copies out in the exact format `run.py --feedback` reads.
-- **Demo state** is kept in the browser; reset it from the staff Dashboard.
+Live demo: https://chakshu-c.github.io/trial-match/
+
+- **Sign in:** pick a demo patient or clinician, or create a patient account (it links a spare research record).
+- **Patient**
+  - **Discover (home):** swipe through your best-fitting trials. Tap a card for details; quick questions re-score every trial live.
+  - **My trials:** each application with a 7-step progress bar (applied → invited → prescreen → screening → eligible → approved → enrolled), plus open matches and closed ones.
+  - **My health:** diagnosis and biomarkers from the record, and six-month charts for blood counts, kidney function and weight with typical ranges and trial minimums. Falling values turn red.
+  - **Inbox:** messages from the agent and care team, sent automatically as an application moves.
+- **Clinician**
+  - **Prescreen (home):** swipe on candidates for a trial, with criteria and evidence and Confirm met / Not met buttons.
+  - **Overview:** what needs you today, headline numbers, the applicant funnel, trials with applicants, matches and the prescreen log (copies out in the format `run.py --feedback` reads).
+  - **Rank:** compare each new applicant with one already ranked (binary insertion, one swipe per comparison), then invite the top N to prescreening.
+  - **Applications:** every application, filterable by trial and stage; open one to move it on, mark it not eligible or record a withdrawal.
+- **Agent (preview):** a chat panel that answers three suggested questions per role from the demo data. It isn't a full agent yet and says so.
+- **Synthetic demo data:** names, cities, lab charts, messages and application history are made up and labelled as such. Demo state is kept in the browser; reset it from Overview.
 
 ## Data
 
