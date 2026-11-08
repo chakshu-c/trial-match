@@ -1,13 +1,12 @@
 # TrialMatch
 
-**Swipe-to-match for lung cancer clinical trials, with a nurse in the loop.**
+**Fill lung cancer trials faster: an agent for every patient, a ranked, pre-checked list for every trial team.**
 AgentVerse 2026 · Biotech track · *Make the path to patients faster*
 
-Most Phase III trials miss their recruitment timeline, and lung cancer trials are especially hard to fill. They have more eligibility criteria every year, they depend on biomarkers, and patients can get too unwell to join while they wait to be screened. TrialMatch ranks recruiting Phase III non-small cell lung cancer (NSCLC) trials by how likely a patient is to **succeed** in each one: be eligible, enrol, and stay to the end. A research nurse prescreens every match, and their results feed back into the matcher.
+Trials stall because finding eligible patients is slow and manual. Only 5.3% of 9,901 US patients with lung or colorectal cancer joined a trial (CanCORS), and 39% of cancer trials that closed early for reasons other than safety or results stopped for poor accrual (Stensland et al., 2014). TrialMatch ranks recruiting Phase III non-small cell lung cancer (NSCLC) trials by how likely a patient is to **succeed** in each one: be eligible, enrol, and stay to the end. A research nurse prescreens every match, and their results feed back into the matcher. The full case, with sources, is in [WRITEUP.md](WRITEUP.md).
 
-- **Patients** swipe through a short list of their best-fitting trials, answer a few quick questions that re-score every trial live, and tap a card to see why it fits.
-- **Staff** prescreen candidates for a trial, with the evidence for every criterion, and confirm or reject what the agent couldn't settle.
-- **It's a match** when the patient is interested *and* the nurse passes them at prescreen.
+- **Trial teams** (the customer) review pre-checked applicants with the evidence for every criterion, rank them in a handful of comparisons, and move them through prescreening to enrolment.
+- **Patients** talk to their agent, which recommends trials that fit, explains them, and applies when they're ready. Matching runs on their device.
 
 ## Quick start
 
@@ -26,7 +25,8 @@ Other options:
 python run.py --refresh                                    # re-download trials from ClinicalTrials.gov first
 python run.py --home 51.5246,-0.1340                       # add travel distance from a home location
 python run.py --feedback data/prescreen_outcomes_DEMO.csv  # feed nurse prescreening back in (demo rows are synthetic)
-python run.py --llm 3                                      # optional Gemini pass over remaining criteria (needs GEMINI_API_KEY or GOOGLE_CLOUD_PROJECT)
+python run.py --llm 3                                      # optional MedGemma pass over remaining criteria, run locally via Ollama
+python run.py --llm 3 --llm-backend gemini                 # same pass on cloud Gemini (needs GEMINI_API_KEY or GOOGLE_CLOUD_PROJECT)
 ```
 
 ## How it works
@@ -47,24 +47,24 @@ python run.py --llm 3                                      # optional Gemini pas
    - Corrections to a misread trial rule are saved for that trial.
    - Verdicts on a specific patient–trial pair override the agent; a screen failure or decline removes it, and an enrolled pair is listed first.
    - Outcomes re-estimate the weights (Beta-Binomial, starting from the team's guesses).
-8. **Gemini pass** (`trialmatch/llm.py`, optional): checks the criteria the parser doesn't model (labs, comorbidities, other drugs) for each patient's top trials. Not run in the offline build.
+8. **LLM pass** (`trialmatch/llm.py`, optional): checks the criteria the parser doesn't model (labs, comorbidities, other drugs) for each patient's top trials. Defaults to MedGemma, Google's open medical model, running locally through Ollama (`ollama pull medgemma:4b`, then `--llm-backend local`), so records never leave the machine; `--llm-backend gemini` uses the cloud API instead. Same rules as the parser: "not met" only with a quoted value. Not run in the offline build.
 
 ## The app (`app/index.html`)
 
 Live demo: https://chakshu-c.github.io/trial-match/
 
-- **Sign in:** pick a demo patient or clinician, or create a patient account (it links a spare research record).
-- **Patient**
-  - **Discover (home):** swipe through your best-fitting trials. Tap a card for details; quick questions re-score every trial live.
-  - **My trials:** each application with a 7-step progress bar (applied → invited → prescreen → screening → eligible → approved → enrolled), plus open matches and closed ones.
-  - **My health:** diagnosis and biomarkers from the record, and six-month charts for blood counts, kidney function and weight with typical ranges and trial minimums. Falling values turn red.
-  - **Inbox:** messages from the agent and care team, sent automatically as an application moves.
+- **Sign in:** trial-team accounts first, or a demo patient. A new patient account links a spare research record.
 - **Clinician**
-  - **Prescreen (home):** swipe on candidates for a trial, with criteria and evidence and Confirm met / Not met buttons.
-  - **Overview:** what needs you today, headline numbers, the applicant funnel, trials with applicants, matches and the prescreen log (copies out in the format `run.py --feedback` reads).
-  - **Rank:** compare each new applicant with one already ranked (binary insertion, one swipe per comparison), then invite the top N to prescreening.
+  - **Review (home):** a queue of candidates for a trial beside the open case: criterion-by-criterion evidence with Confirm met / Not met, then Pass prescreening or Not eligible. Applicants come first, then anyone to refer this week.
+  - **Overview:** what needs you today, recruitment-speed measures (application to prescreen decision, pass rate, patients sent on after a failed screen, comparisons per ranked batch), the applicant funnel, and the prescreen log (copies out in the format `run.py --feedback` reads).
+  - **Rank:** compare each new applicant with one already ranked (binary insertion), then invite the top N to prescreening.
   - **Applications:** every application, filterable by trial and stage; open one to move it on, mark it not eligible or record a withdrawal.
-- **Agent (preview):** a chat panel that answers three suggested questions per role from the demo data. It isn't a full agent yet and says so.
+- **Patient**
+  - **Your agent (home):** a conversation that recommends trials as cards (I'm interested / Not for me / Tell me more), explains any trial, what taking part offers and how data is kept private. It's a preview: answers are scripted from the demo data and worked out in the browser.
+  - **My trials:** each application with a 7-step progress bar, plus open matches and closed ones.
+  - **My health:** diagnosis and biomarkers from the record, six-month charts with typical ranges and trial minimums (falling values in red), and privacy and consent settings, including letting the agent apply to the next best trial if one doesn't work out.
+  - **Inbox:** messages from the agent and care team as an application moves.
+- **No swiping:** decisions are explicit buttons with the evidence in view.
 - **Synthetic demo data:** names, cities, lab charts, messages and application history are made up and labelled as such. Demo state is kept in the browser; reset it from Overview.
 
 ## Data
