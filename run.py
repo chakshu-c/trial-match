@@ -16,9 +16,7 @@ ap.add_argument("--home", default=None, help="lat,lon for travel distance")
 ap.add_argument("--top", type=int, default=5)
 ap.add_argument("--out", default="results")
 ap.add_argument("--refresh", action="store_true")
-ap.add_argument("--llm", type=int, default=0, help="run an LLM over each patient's top N trials")
-ap.add_argument("--llm-backend", choices=["local", "gemini"], default="local",
-                help="local = MedGemma via Ollama on this machine (default, data stays local); gemini = cloud API")
+ap.add_argument("--llm", type=int, default=0, help="run Gemini on each patient's top N trials (needs credentials)")
 ap.add_argument("--feedback", default=None, help="prescreening outcomes CSV to feed back (see trialmatch/feedback.py)")
 a = ap.parse_args()
 
@@ -58,7 +56,7 @@ if a.llm:
     for p, r in zip(patients, results):
         for res in r["top"][:a.llm]:
             used = " | ".join(l["trial_evidence"] for l in res["labels"])
-            rescore(res, llm_labels(p, T[res["nct"]], used, backend=a.llm_backend), p)
+            rescore(res, llm_labels(p, T[res["nct"]], used), p)
         r["top"] = sorted([x for x in r["top"] if x["E"] > 0], key=lambda x: -x["score"])[:a.top]
 json.dump(results, open(f"{a.out}/patient_matches.json", "w"), indent=1)
 

@@ -16,7 +16,7 @@ Fixes made between the first and second check: "not amenable to surgical resecti
 
 ## Known blind spots
 
-- Requirements for rarer biomarkers (HER2, NTRK, MET amplification) are not modelled. They are left to the optional LLM pass (local MedGemma or Gemini) or the nurse.
+- Requirements for rarer biomarkers (HER2, NTRK, MET amplification) are not modelled. They are left to the Gemini pass or the nurse.
 - Trials that *require* brain or leptomeningeal metastases are read as excluding them.
 - Some resectable or adjuvant trials are also tagged "advanced" when their text mentions metastatic disease in passing.
 - A few supportive-care studies (cachexia, focused ultrasound) are registered with "treatment" as their purpose and still appear.

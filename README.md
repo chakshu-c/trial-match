@@ -1,96 +1,166 @@
-# TrialMatch
+<h1 align="center">
+  <a href="https://trial-match-ebon.vercel.app/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
+      <img src="docs/logo-light.png" alt="Trial Match" width="420">
+    </picture>
+  </a>
+</h1>
 
-**Fill lung cancer trials faster: an agent for every patient, a ranked, pre-checked list for every trial team.**
-AgentVerse 2026 · Biotech track · *Make the path to patients faster*
+<h4 align="center">Find the right patients for your clinical trial, before the trial sits empty.</h4>
 
-Trials stall because finding eligible patients is slow and manual. Only 5.3% of 9,901 US patients with lung or colorectal cancer joined a trial (CanCORS), and 39% of cancer trials that closed early for reasons other than safety or results stopped for poor accrual (Stensland et al., 2014). TrialMatch ranks recruiting Phase III non-small cell lung cancer (NSCLC) trials by how likely a patient is to **succeed** in each one: be eligible, enrol, and stay to the end. A research nurse prescreens every match, and their results feed back into the matcher. The full case, with sources, is in [WRITEUP.md](WRITEUP.md).
+<p align="center">
+  <img alt="AgentVerse 2026" src="https://img.shields.io/badge/AgentVerse-2026-4285F4">
+  <img alt="Biotech track" src="https://img.shields.io/badge/track-Biotech-9B72CB">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="Gemini" src="https://img.shields.io/badge/Gemini-agents-8E75B2?logo=googlegemini&logoColor=white">
+  <img alt="MedGemma" src="https://img.shields.io/badge/MedGemma-on%20device-34A853">
+  <img alt="Demo data" src="https://img.shields.io/badge/demo%20data-synthetic-D96570">
+</p>
 
-**Live site: https://trial-match-ebon.vercel.app/**
+<p align="center">
+  <a href="https://trial-match-ebon.vercel.app/app/"><b>Live demo</b></a> •
+  <a href="#quick-start">Quick start</a> •
+  <a href="#how-it-works">How it works</a> •
+  <a href="#results">Results</a> •
+  <a href="#safeguards">Safeguards</a> •
+  <a href="docs/TrialMatch_write-up.pdf">Write-up</a> •
+  <a href="docs/Trial_Match_Pitch.pdf">Pitch deck</a>
+</p>
 
-- **Trial teams** (the customer) review pre-checked applicants with the evidence for every criterion, rank them in a handful of comparisons, and move them through prescreening to enrolment.
-- **Patients** talk to their agent, which recommends trials that fit, explains them, and applies when they're ready. Matching runs on their device.
+<p align="center">
+Trial Match is a multi-agent system that finds eligible patients for recruiting clinical trials. It reads patient records, checks every entry rule against the evidence, and hands trial teams a ranked shortlist of people who are likely to qualify, enrol and stay to the end. A research nurse pre-screens every match, and their results feed back into the next ranking.
+</p>
+
+<p align="center">
+  <img src="docs/clinician.gif" alt="Ranking applicants for a trial" width="640">
+</p>
+
+> [!IMPORTANT]
+> **Prototype, not a medical device.** Every patient, trial and hospital in the demo is synthetic. Results are from offline tests and are **not** real-world performance.
+
+---
+
+## The problem
+
+4 in 10 UK trials still have **no patient a month after opening**, and it takes 122 days on average to recruit the first one. Meanwhile 95% of patients say they'd consider a trial, and 63% are never told about one. Finding them today depends on a busy clinician remembering which trials exist and checking 20–30 eligibility rules by hand.
 
 ## Quick start
 
+**Try it in the browser:** open the [live demo](https://trial-match-ebon.vercel.app/app/), choose **I'm a clinician**, and pick Dr Amira Rahman. No sign-up needed.
+
+**Run it locally:**
+
 ```bash
+git clone https://github.com/chakshu-c/trial-match.git
+cd trial-match
 pip install -r requirements.txt
-python run.py                       # match 30 patients x 205 recruiting Phase 3 NSCLC treatment trials -> results/
-python build_app.py                 # rebuild the app from the matcher -> app/index.html
-python -m pytest -q tests           # parser tests
+
+python fetch_trials.py                                      # pull recruiting Phase III trials
+python run.py --top 10 --out results/                       # rank trials for each patient
+python run.py --feedback data/prescreen_outcomes_DEMO.csv   # learn from nurse pre-screens
+python build_app.py                                         # rebuild the web app
 ```
 
-Open `app/index.html` in a browser: no server or install needed.
+> **Note:** set `GEMINI_API_KEY` to turn on the Gemini agents. Everything else runs without it.
 
-Other options:
+---
 
-```bash
-python run.py --refresh                                    # re-download trials from ClinicalTrials.gov first
-python run.py --home 51.5246,-0.1340                       # add travel distance from a home location
-python run.py --feedback data/prescreen_outcomes_DEMO.csv  # feed nurse prescreening back in (demo rows are synthetic)
-python run.py --llm 3                                      # optional MedGemma pass over remaining criteria, run locally via Ollama
-python run.py --llm 3 --llm-backend gemini                 # same pass on cloud Gemini (needs GEMINI_API_KEY or GOOGLE_CLOUD_PROJECT)
-```
+### 🔎 Key features
+
+- 📋 **Ranked shortlists for every trial:** applicants ordered by how likely they are to qualify, enrol and complete, not just whether they pass a keyword search.
+- 🧾 **Every rule shows its evidence:** each criterion is marked *met*, *not met* or *unknown*, with the line from the record and the trial text quoted.
+- ❓ **Unknown is not "no":** an untested biomarker becomes "needs testing", so eligible patients aren't silently dropped.
+- 🔁 **Pre-screening feeds back:** nurse results fill gaps in records, correct misread rules and re-tune the ranking.
+- 🔒 **The record stays on the device:** Gemini researches online using only public words, and MedGemma reads the findings against the record locally.
+- 🌍 **Fairer recruitment:** a small boost for under-represented groups that can only raise a score, never lower one.
+
+---
 
 ## How it works
 
-1. **Trial Scout** (`fetch_trials.py`): recruiting and not-yet-recruiting Phase 3 NSCLC trials from the ClinicalTrials.gov API v2. Snapshot of 7 Nov 2026: 210 trials, 205 with treatment as their primary purpose, 46 with UK sites.
-2. **Criteria Parser** (`trialmatch/criteria.py`): turns free-text eligibility into the fields that decide most NSCLC matches. These are stage range, histology, ECOG limit, required or excluded biomarkers (EGFR, ALK, ROS1, KRAS G12C/G12D, BRAF V600E, RET, MET exon 14), PD-L1 threshold, prior treatment lines, brain metastases, fresh biopsy and placebo arm. Each field keeps the criterion line it came from.
-3. **Eligibility Checker** (`trialmatch/match.py`): labels each criterion *met / not met / unknown*, quoting both the patient record and the trial text.
-4. **Verifier**: a "not met" without a recorded value becomes "unknown", so nobody is ruled out on missing data.
-5. **Interviewer**: turns unknowns into plain questions, asking first the one that settles the most trials. Untested biomarkers become "needs testing", never "no".
-6. **Feasibility and ranking**: `Score = E x F x (1 + 0.2D)`
-   - **E**, eligibility: each unknown x0.7, and any criterion not met removes the trial.
-   - **F**, feasibility: 0.8 base. Fresh biopsy required x0.7, from screen-failure rates of 49.1% vs 26.5% (Spiegel et al., *Cancer* 2017). Placebo arm x0.9. Distant sites x0.85 / x0.7.
-   - **D**, a boost for groups lung cancer trials under-enrol (age 70+, Black patients). It only ever raises a score.
-   - Patients at stage IIIB–IV with ECOG 1 or more are flagged "refer this week".
-   - Apart from the biopsy penalty, the weights are team assumptions, tunable in `W` in `trialmatch/match.py`.
-7. **Prescreening loop** (`trialmatch/feedback.py`): the nurse's prescreen log feeds back in four ways.
-   - Patient answers fill gaps in the record.
-   - Corrections to a misread trial rule are saved for that trial.
-   - Verdicts on a specific patient–trial pair override the agent; a screen failure or decline removes it, and an enrolled pair is listed first.
-   - Outcomes re-estimate the weights (Beta-Binomial, starting from the team's guesses).
-8. **LLM pass** (`trialmatch/llm.py`, optional): checks the criteria the parser doesn't model (labs, comorbidities, other drugs) for each patient's top trials. Defaults to MedGemma, Google's open medical model, running locally through Ollama (`ollama pull medgemma:4b`, then `--llm-backend local`), so records never leave the machine; `--llm-backend gemini` uses the cloud API instead. Same rules as the parser: "not met" only with a quoted value. Not run in the offline build.
+1. **Trial Scout** pulls recruiting trials live from ClinicalTrials.gov.
+2. **Criteria Parser** turns each trial's eligibility text into rules: stage, histology, ECOG, biomarkers, PD-L1, prior lines, brain metastases, biopsy and placebo arm.
+3. **Records Reader** (MedGemma) extracts facts from clinic letters and records.
+4. **Skeptic** throws out any fact it can't quote word for word from the record.
+5. **Matcher** checks every rule in fixed code (rules, not AI) and asks for the one missing fact that settles the most trials.
+6. **Ranker** scores each patient–trial pair:
+   `Score = Eligibility × Feasibility × (1 + 0.2 × Diversity)`
+7. **Research nurse** pre-screens the shortlist. Their outcomes flow back into steps 5 and 6.
 
-## The app (`app/index.html`)
+```mermaid
+flowchart LR
+    A[Trial Scout] --> B[Criteria Parser]
+    C[Records Reader] --> D[Skeptic]
+    B --> E[Matcher]
+    D --> E
+    E --> F[Ranker]
+    F --> G[Research nurse]
+    G -- pre-screen results --> F
+```
 
-**Live site: https://trial-match-ebon.vercel.app/** (the main site; a mirror is on GitHub Pages at https://chakshu-c.github.io/trial-match/)
+---
 
-- **Sign in:** trial-team accounts first, or a demo patient. A new patient account links a spare research record.
-- **Clinician**
-  - **Review (home):** a queue of candidates for a trial beside the open case: criterion-by-criterion evidence with Confirm met / Not met, then Pass prescreening or Not eligible. Applicants come first, then anyone to refer this week.
-  - **Overview:** what needs you today, recruitment-speed measures (application to prescreen decision, pass rate, patients sent on after a failed screen, comparisons per ranked batch), the applicant funnel, and the prescreen log (copies out in the format `run.py --feedback` reads).
-  - **Rank:** compare each new applicant with one already ranked (binary insertion), then invite the top N to prescreening.
-  - **Applications:** every application, filterable by trial and stage; open one to move it on, mark it not eligible or record a withdrawal.
-- **Patient**
-  - **Your agent (home):** a conversation that recommends trials as cards (I'm interested / Not for me / Tell me more), explains any trial, what taking part offers and how data is kept private. It's a preview: answers are scripted from the demo data and worked out in the browser.
-  - **My trials:** each application with a 7-step progress bar, plus open matches and closed ones.
-  - **My health:** diagnosis and biomarkers from the record, six-month charts with typical ranges and trial minimums (falling values in red), and privacy and consent settings, including letting the agent apply to the next best trial if one doesn't work out.
-  - **Inbox:** messages from the agent and care team as an application moves.
-- **No swiping:** decisions are explicit buttons with the evidence in view.
-- **Synthetic demo data:** names, cities, lab charts, messages and application history are made up and labelled as such. Demo state is kept in the browser; reset it from Overview.
+## Results
 
-## Data
+| Test | Result |
+|:---|:---|
+| Matching, 45,600 synthetic patient–trial pairs | A plain registry search got **93%** of its "eligible" matches wrong. Trial Match got **0%** wrong and cut trials to review per patient from **16.7 to 1.6** |
+| Criteria parser, hand-checked against raw trial text | **92%** of fields correct (58/63) on 8 held-out trials |
+| Chat agent | All 11 tests passed on the live model |
 
-| Data | Source | Notes |
-| --- | --- | --- |
-| Trials | [ClinicalTrials.gov API v2](https://clinicaltrials.gov/data-api/api) (US National Library of Medicine) | Snapshot in `data/trials.json`, 7 Nov 2026 |
-| Patients | `data/lung_cancer_patients.xlsx`: 30 de-identified records from public cBioPortal studies ([TCGA LUAD](https://www.cbioportal.org/study/summary?id=luad_tcga), [TCGA LUSC](https://www.cbioportal.org/study/summary?id=lusc_tcga), [MSKCC NSCLC 2018](https://www.cbioportal.org/study/summary?id=nsclc_pd1_msk_2018)) | Sources and limits in `docs/Patient_Data_Report.docx`. Treated as snapshots at diagnosis |
-| Prescreen outcomes | `data/prescreen_outcomes_DEMO.csv` | **Synthetic**, hand-written to show the feedback loop. Never reported as performance |
+> Small samples on synthetic data. Method in [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
-No identifiable or private patient data is used.
+---
 
-## Evaluation and limits
+## Safeguards
 
-The rule-based parser was hand-checked against raw trial text. It got 85% of fields right on a 12-trial tuning sample before fixes, and 92% (58/63) on 8 held-out trials after them. Method, fixes and known blind spots are in [`docs/EVALUATION.md`](docs/EVALUATION.md). Results are a demonstration on public research data, not real-world performance. TrialMatch recommends and explains; a research nurse confirms every match, and the tool never enrols anyone or tells a patient they qualify.
+- **People decide.** A nurse pre-screens every match, and the tool never enrols anyone.
+- **Names stay hidden.** Trial teams see an ID until the patient says yes.
+- **Nothing happens without a tap.** Agents only suggest, and a person confirms every action.
+- **Honest limits.** The scoring weights (apart from the biopsy penalty) are our own assumptions and haven't been validated against real enrolment. So far it's built and tested on lung cancer trials, and other diseases are untested.
 
-## Repo layout
+---
+
+## Data and licences
+
+| Source | Used for | Licence |
+|:---|:---|:---|
+| [ClinicalTrials.gov API v2](https://clinicaltrials.gov/data-api/api) | Live trial records | Public domain (US NLM) |
+| [cBioPortal](https://www.cbioportal.org/) (TCGA LUAD/LUSC, MSKCC NSCLC 2018) | De-identified research records for building the engine | Open access, per study terms |
+| PubMed, FDA labels | Researcher agent's public sources | Public |
+| Synthetic | All demo patients, trials, sites and pre-screen outcomes | Ours |
+| [Unsplash](https://unsplash.com/) (CDC) | Site photography | Unsplash licence |
+
+## Project structure
 
 ```
-app/            index.html (built app), template.html (app source)
-data/           trials snapshot, patient records, synthetic prescreen demo
-docs/           evaluation notes, patient data report
-results/        matcher output; results_after_feedback_DEMO/ shows the loop
-tests/          parser unit tests
-trialmatch/     patients.py, criteria.py, match.py, feedback.py, llm.py
-run.py          run the matcher      fetch_trials.py   download trials      build_app.py   rebuild the app
+trialmatch/
+  criteria.py   # trial text → rules
+  match.py      # check, verify, score and rank
+  feedback.py   # learn from nurse pre-screen outcomes
+  llm.py        # optional Gemini pass
+fetch_trials.py · run.py · build_app.py
+app/ · docs/ · tests/
 ```
+
+---
+
+## Team
+
+Trial Match is a team project, built together at AgentVerse 2026. This repo is a copy of the team repo, [kaihuang1425/trialmatch](https://github.com/kaihuang1425/trialmatch).
+
+<table align="center">
+  <tr>
+    <td align="center"><a href="https://github.com/kaihuang1425"><img src="https://github.com/kaihuang1425.png" width="80" alt=""><br><b>I-Kai Huang</b></a><br><sub>@kaihuang1425</sub></td>
+    <td align="center"><a href="https://github.com/Abhay487"><img src="https://github.com/Abhay487.png" width="80" alt=""><br><b>Abhay487</b></a><br><sub>@Abhay487</sub></td>
+    <td align="center"><a href="https://github.com/kohdyism"><img src="https://github.com/kohdyism.png" width="80" alt=""><br><b>kohdyism</b></a><br><sub>@kohdyism</sub></td>
+    <td align="center"><a href="https://github.com/chakshu-c"><img src="https://github.com/chakshu-c.png" width="80" alt=""><br><b>Chakshu</b></a><br><sub>@chakshu-c</sub></td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  Built by <b>Team TrialMatch</b> for <b>AgentVerse 2026</b> · UCL AI Society × Google DeepMind · Biotech track: <i>make the path to patients faster</i>
+</p>
