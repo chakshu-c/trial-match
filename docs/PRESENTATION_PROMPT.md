@@ -60,7 +60,7 @@ Trials stall because finding eligible patients is slow and manual. TrialMatch gi
 10. Critique 5, MedGemma and trust: rules first, local LLM second, nurse always; the 85% → 92% evaluation.
 11. Critique 7, real vs synthetic: a two-column table.
 12. Limits and next steps: known parser blind spots (rarer biomarkers HER2/NTRK/MET amplification; trials that require brain metastases; some supportive-care studies registered as treatment), synthetic activity, a site pilot to measure real time saved, running MedGemma on-device.
-13. Closing: the pitch line again and the live demo link https://chakshu-c.github.io/trial-match/
+13. Closing: the pitch line again and the live site link https://trial-match-ebon.vercel.app/
 
 ## Style
 

@@ -2,7 +2,7 @@
 
 **Trials stall because finding eligible patients is slow and manual. TrialMatch gives every patient an agent that finds and pre-checks trials for them, and gives every trial team a ranked list of patients who already fit, so trials fill faster and new treatments reach everyone sooner.**
 
-AgentVerse 2026, Biotech track: *Make the path to patients faster.*
+AgentVerse 2026, Biotech track: *Make the path to patients faster.* Live site: https://trial-match-ebon.vercel.app/
 
 ## The problem
 

@@ -5,6 +5,8 @@ AgentVerse 2026 · Biotech track · *Make the path to patients faster*
 
 Trials stall because finding eligible patients is slow and manual. Only 5.3% of 9,901 US patients with lung or colorectal cancer joined a trial (CanCORS), and 39% of cancer trials that closed early for reasons other than safety or results stopped for poor accrual (Stensland et al., 2014). TrialMatch ranks recruiting Phase III non-small cell lung cancer (NSCLC) trials by how likely a patient is to **succeed** in each one: be eligible, enrol, and stay to the end. A research nurse prescreens every match, and their results feed back into the matcher. The full case, with sources, is in [WRITEUP.md](WRITEUP.md).
 
+**Live site: https://trial-match-ebon.vercel.app/**
+
 - **Trial teams** (the customer) review pre-checked applicants with the evidence for every criterion, rank them in a handful of comparisons, and move them through prescreening to enrolment.
 - **Patients** talk to their agent, which recommends trials that fit, explains them, and applies when they're ready. Matching runs on their device.
 
@@ -51,7 +53,7 @@ python run.py --llm 3 --llm-backend gemini                 # same pass on cloud 
 
 ## The app (`app/index.html`)
 
-Live demo: https://chakshu-c.github.io/trial-match/
+**Live site: https://trial-match-ebon.vercel.app/** (the main site; a mirror is on GitHub Pages at https://chakshu-c.github.io/trial-match/)
 
 - **Sign in:** trial-team accounts first, or a demo patient. A new patient account links a spare research record.
 - **Clinician**
